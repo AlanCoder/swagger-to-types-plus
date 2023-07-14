@@ -339,7 +339,6 @@ export class OpenAPIV3Parser extends BaseParser {
 
     if (allOf && allOf.length === 1) {
       const allOfSingleSchema = this.dereferenceSchema(allOf[0]);
-      log.warn(allOfSingleSchema);
       if (!allOfSingleSchema) return res;
       res.item = this.parseProperties(
         allOfSingleSchema.properties,

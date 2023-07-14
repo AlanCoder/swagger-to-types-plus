@@ -2,7 +2,7 @@
   "name": "swagger-to-types-plus",
   "displayName": "Swagger To Types Plus",
   "description": "VSCode Extension: Transform swagger-api to typescript interface.",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "icon": "assets/app-icon.png",
   "publisher": "AlanCoder",
   "engines": {
