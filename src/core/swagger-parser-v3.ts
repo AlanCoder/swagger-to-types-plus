@@ -1,19 +1,19 @@
-import type { OpenAPIV3 } from "openapi-types";
+import type { OpenAPIV3 } from 'openapi-types';
 
-import { getValueByPath, log, randomId } from "../tools";
-import { BaseParser } from "./";
+import { getValueByPath, log, randomId } from '../tools';
+import { BaseParser } from './';
 
 interface DereferenceItem extends Required<OpenAPIV3.OperationObject> {}
 
-type SchemaType<T> = T extends "array"
+type SchemaType<T> = T extends 'array'
   ? OpenAPIV3.ArraySchemaObject
-  : T extends "object"
+  : T extends 'object'
   ? OpenAPIV3.NonArraySchemaObject
   : OpenAPIV3.SchemaObject;
 
-type SchemaItem<T extends "array" | "object" | void = void> = Omit<
+type SchemaItem<T extends 'array' | 'object' | void = void> = Omit<
   SchemaType<T>,
-  "required"
+  'required'
 > & {
   /** 字段名 */
   name: string;
@@ -45,7 +45,7 @@ export class OpenAPIV3Parser extends BaseParser {
             );
           } catch (e) {
             log.error(
-              "error:" +
+              'error:' +
                 JSON.stringify({
                   path,
                   item: pathItem[method],
@@ -56,7 +56,7 @@ export class OpenAPIV3Parser extends BaseParser {
           }
         });
       } catch (err) {
-        log.error("error:" + JSON.stringify({ err, content: pathItem }));
+        log.error('error:' + JSON.stringify({ err, content: pathItem }));
       }
     }
 
@@ -90,7 +90,7 @@ export class OpenAPIV3Parser extends BaseParser {
 
     // get 方法优先解析 parameters 参数，其它方法优先解析 body 参数。
     // TODO: 待调研：优先使用 url search 作为参数的方法除 get 外是否还有其它。
-    if (["GET"].includes(method.toUpperCase())) {
+    if (['GET'].includes(method.toUpperCase())) {
       if (parameters) {
         params = this.parseParameters(parameters);
       } else if (requestBody) {
@@ -108,10 +108,10 @@ export class OpenAPIV3Parser extends BaseParser {
 
     const itemRes: SwaggerJsonTreeItem = {
       groupName: this.configItem.title,
-      type: "interface",
+      type: 'interface',
       key: randomId(`${desc}-xxxxxx`),
-      basePath: this.configItem.basePath || "",
-      parentKey: "",
+      basePath: this.configItem.basePath || '',
+      parentKey: '',
       method,
       params,
       response,
@@ -128,10 +128,10 @@ export class OpenAPIV3Parser extends BaseParser {
 
   /** 解析 parameters 参数 */
   parseParameters(
-    parameters: OpenAPIV3.OperationObject["parameters"]
+    parameters: OpenAPIV3.OperationObject['parameters']
   ): TreeInterfaceParamsItem[] {
     if (!parameters) {
-      log.warn("parseParameters: parameters is null.");
+      log.warn('parseParameters: parameters is null.');
       return [];
     }
 
@@ -142,7 +142,7 @@ export class OpenAPIV3Parser extends BaseParser {
         this.dereferenceSchema<OpenAPIV3.ParameterObject>(paramItem);
 
       if (!paramSchema) return;
-      if (paramSchema.in === "header") return; // 忽略 headers
+      if (paramSchema.in === 'header') return; // 忽略 headers
       if (
         Object.prototype.hasOwnProperty.call(paramCatchObj, paramSchema?.name)
       )
@@ -161,13 +161,13 @@ export class OpenAPIV3Parser extends BaseParser {
         propertiesItem.itemsRequiredNamesList = schema.required;
       }
 
-      if (schema.type === "array") {
+      if (schema.type === 'array') {
         paramCatchObj[propertiesItem.name] = this.parseArray(
-          propertiesItem as SchemaItem<"array">
+          propertiesItem as SchemaItem<'array'>
         );
       } else {
         paramCatchObj[propertiesItem.name] = this.parseObject(
-          propertiesItem as SchemaItem<"object">
+          propertiesItem as SchemaItem<'object'>
         );
       }
     });
@@ -177,37 +177,37 @@ export class OpenAPIV3Parser extends BaseParser {
 
   /** 解析 body 参数 */
   parseRequestBody(
-    requestBodyUnresolved: OpenAPIV3.OperationObject["requestBody"]
+    requestBodyUnresolved: OpenAPIV3.OperationObject['requestBody']
   ): TreeInterfacePropertiesItem | undefined {
     const requestBody = this.dereferenceSchema<OpenAPIV3.RequestBodyObject>(
       requestBodyUnresolved
     );
     if (!requestBody) {
-      log.warn("parseRequestBody: requestBody is null.");
+      log.warn('parseRequestBody: requestBody is null.');
       return void 0;
     }
 
     // WARN: 永远只取首位键值对，通常为：application/json，其它情况忽略
     const requestBodyContent = Object.values(requestBody.content || {})?.[0];
     if (!requestBodyContent) {
-      log.warn("parseRequestBody: requestBodyContent is null.");
+      log.warn('parseRequestBody: requestBodyContent is null.');
       return void 0;
     }
 
     const requestBodySchema = this.dereferenceSchema(requestBodyContent.schema);
     if (!requestBodySchema) {
-      log.warn("parseRequestBody: requestBodySchema is null.");
+      log.warn('parseRequestBody: requestBodySchema is null.');
       return void 0;
     }
 
-    return this.parseSchemaObject(requestBodySchema, "");
+    return this.parseSchemaObject(requestBodySchema, '');
   }
 
   getResponseData(
     responses: OpenAPIV3.ResponsesObject,
     key?: string
   ): OpenAPIV3.MediaTypeObject | void {
-    let responseData = responses[key || "default"] as OpenAPIV3.ResponseObject;
+    let responseData = responses[key || 'default'] as OpenAPIV3.ResponseObject;
     let res: OpenAPIV3.MediaTypeObject | void;
 
     // 如果没有指定 key 或 default，取第一个 content 不为空的值
@@ -229,7 +229,7 @@ export class OpenAPIV3Parser extends BaseParser {
     if (!res && !key) {
       for (const code in responses) {
         const val = responses[code] as OpenAPIV3.ResponseObject;
-        res = val?.content?.["application/json"];
+        res = val?.content?.['application/json'];
         if (res) break;
       }
     }
@@ -244,7 +244,7 @@ export class OpenAPIV3Parser extends BaseParser {
     const responseBodyContent = this.getResponseData(responses);
 
     if (!responseBodyContent) {
-      log.warn("parseResponse: responseBodyContent is null.");
+      log.warn('parseResponse: responseBodyContent is null.');
       return void 0;
     }
 
@@ -252,10 +252,10 @@ export class OpenAPIV3Parser extends BaseParser {
       responseBodyContent.schema
     );
     if (!responseBodySchema) {
-      log.warn("parseResponse: responseBodySchema is null.");
+      log.warn('parseResponse: responseBodySchema is null.');
       return void 0;
     }
-    return this.parseSchemaObject(responseBodySchema, "");
+    return this.parseSchemaObject(responseBodySchema, '');
   }
 
   parseSchemaObject(
@@ -267,7 +267,7 @@ export class OpenAPIV3Parser extends BaseParser {
     if (itemsRequiredNamesList) {
       requiredBoolean = itemsRequiredNamesList.includes(name);
     }
-    if (schema.type === "array") {
+    if (schema.type === 'array') {
       const { required, ...val } = schema;
       return this.parseArray({
         ...val,
@@ -287,10 +287,17 @@ export class OpenAPIV3Parser extends BaseParser {
   }
 
   /** 解析数组 */
-  parseArray(arrayItem: SchemaItem<"array">): TreeInterfacePropertiesItem {
+  parseArray(
+    arrayItem: SchemaItem<'array'>,
+    parentRef?: string
+  ): TreeInterfacePropertiesItem {
     const { type, description } = arrayItem;
-    const items = this.dereferenceSchema(arrayItem.items) || {};
 
+    let items = this.dereferenceSchema(arrayItem.items) || {};
+
+    if (items.title === 'WorkOrderCodeVO') {
+      console.log();
+    }
     const { type: itemsType, ...itemsData } = items;
 
     const itemSchema: SchemaItem = {
@@ -311,20 +318,19 @@ export class OpenAPIV3Parser extends BaseParser {
     if (!type) {
       return itemSchema;
     }
-
-    if (itemsType === "array") {
-      return this.parseArray(itemSchema as SchemaItem<"array">);
+    if (itemsType === 'array') {
+      return this.parseArray(itemSchema as SchemaItem<'array'>);
     } else {
       if (items.required) {
         itemSchema.itemsRequiredNamesList = items.required;
       }
-      return this.parseObject(itemSchema as SchemaItem<"object">);
+      return this.parseObject(itemSchema as SchemaItem<'object'>, items.title);
     }
   }
 
   /** 解析对象 */
   parseObject(
-    propertiesItem: SchemaItem<"object">,
+    propertiesItem: SchemaItem<'object'>,
     parentRef?: string
   ): TreeInterfacePropertiesItem {
     const { properties, allOf, itemsRequiredNamesList } = propertiesItem;
@@ -333,7 +339,7 @@ export class OpenAPIV3Parser extends BaseParser {
     };
 
     if (res.properties) {
-      res.item = this.parseProperties(properties, itemsRequiredNamesList);
+      res.item = this.parseProperties(properties, itemsRequiredNamesList, res);
       return res;
     }
 
@@ -350,19 +356,34 @@ export class OpenAPIV3Parser extends BaseParser {
   }
 
   parseProperties(
-    properties: OpenAPIV3.BaseSchemaObject["properties"],
-    itemsRequiredNamesList?: string[]
+    properties: OpenAPIV3.BaseSchemaObject['properties'],
+    itemsRequiredNamesList?: string[],
+    items?: TreeInterfacePropertiesItem
   ) {
     const arr: TreeInterfacePropertiesItem[] = [];
     for (const name in properties) {
       const schemaSource = properties[name] as OpenAPIV3.ReferenceObject;
       const propertiesSchema = this.dereferenceSchema(schemaSource);
+      // @ts-ignore
+      const propertiesRef = this.dereferenceSchema(propertiesSchema.items);
       if (!propertiesSchema) {
         continue;
       }
 
       arr.push(
-        this.parseSchemaObject(propertiesSchema, name, itemsRequiredNamesList)
+        items?.title === propertiesRef?.title
+          ? this.parseArray({
+              // ...propertiesRef,
+            // ...propertiesSchema,
+              name,
+              required: undefined,
+              itemsRequiredNamesList: undefined,
+            } as SchemaItem<'array'>)
+          : this.parseSchemaObject(
+              propertiesSchema,
+              name,
+              itemsRequiredNamesList
+            )
       );
     }
     return arr;
@@ -370,12 +391,12 @@ export class OpenAPIV3Parser extends BaseParser {
 
   /** 去重合并 allOf 元数据数组 */
   mergeAllOf(
-    a: TreeInterfacePropertiesItem["item"],
-    b: TreeInterfacePropertiesItem["item"]
-  ): TreeInterfacePropertiesItem["item"] {
-    if (!a || typeof a === "string") {
+    a: TreeInterfacePropertiesItem['item'],
+    b: TreeInterfacePropertiesItem['item']
+  ): TreeInterfacePropertiesItem['item'] {
+    if (!a || typeof a === 'string') {
       return b;
-    } else if (!b || typeof b === "string") {
+    } else if (!b || typeof b === 'string') {
       return a;
     }
 
